@@ -1,0 +1,25 @@
+Source: pyshp
+Maintainer: Debian GIS Project <pkg-grass-devel@lists.alioth.debian.org>
+Uploaders: David Paleino <dapal@debian.org>,
+           Ross Gammon <rossgammon@mail.dk>
+Section: python
+Priority: optional
+Build-Depends: debhelper (>= 10~),
+               dh-python,
+               python3-all,
+               python3-setuptools
+Standards-Version: 4.5.1
+Vcs-Browser: https://salsa.debian.org/debian-gis-team/pyshp
+Vcs-Git: https://salsa.debian.org/debian-gis-team/pyshp.git
+Homepage: https://github.com/GeospatialPython/pyshp
+
+Package: python3-pyshp
+Architecture: all
+Depends: ${python3:Depends},
+         ${misc:Depends}
+Description: read/write support for ESRI Shapefile format - Python 3.x
+ PySHP provides read and write support for the ESRI Shapefile format.
+ The Shapefile format is a popular Geographic Information System vector
+ data format created by ESRI.
+ .
+ This package contains the module for Python 3.x.

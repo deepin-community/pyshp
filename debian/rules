@@ -1,0 +1,19 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+export PYBUILD_NAME=pyshp
+
+%:
+	dh $@ \
+		--buildsystem=pybuild \
+		--with python3
+
+override_dh_auto_test:
+	PYBUILD_SYSTEM=custom \
+	PYBUILD_BEFORE_TEST="cp -r {dir}/README.md {dir}/shapefiles {build_dir}" \
+	PYBUILD_TEST_ARGS="cd {build_dir} && {interpreter} shapefile.py" \
+	PYBUILD_AFTER_TEST="rm -rf {build_dir}/README.md {build_dir}/shapefiles {build_dir}/*.pyc {build_dir}/*.dbf {build_dir}/*.sbn {build_dir}/*.sbx {build_dir}/*.shp {build_dir}/*.shx" \
+	dh_auto_test
