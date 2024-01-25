@@ -1,4 +1,51 @@
 
+VERSION 2.3.1
+
+2022-07-28
+	Bug fixes:
+	* Fix recently introduced issue where Reader/Writer closes file-like objects provided by user (#244)
+
+VERSION 2.3.0
+
+2022-04-30
+	New Features:
+	* Added support for pathlib and path-like shapefile filepaths (@mwtoews). 
+	* Allow reading individual file extensions via filepaths.
+
+	Improvements:
+	* Simplified setup and deployment (@mwtoews)
+	* Faster shape access when missing shx file
+	* Switch to named logger (see #240)
+
+	Bug fixes:
+	* More robust handling of corrupt shapefiles (fixes #235)
+	* Fix errors when writing to individual file-handles (fixes #237)
+	* Revert previous decision to enforce geojson output ring orientation (detailed explanation at https://github.com/SciTools/cartopy/issues/2012)
+	* Fix test issues in environments without network access (@sebastic, @musicinmybrain). 
+
+VERSION 2.2.0
+
+2022-02-02
+	New Features:
+	* Read shapefiles directly from zipfiles.
+	* Read shapefiles directly from urls.
+	* Allow fast extraction of only a subset of dbf fields through a `fields` arg.
+	* Allow fast filtering which shapes to read from the file through a `bbox` arg.
+
+	Improvements:
+	* More examples and restructuring of README. 
+	* More informative Shape to geojson warnings (see #219).
+	* Add shapefile.VERBOSE flag to control warnings verbosity (default True).
+	* Shape object information when calling repr().
+	* Faster ring orientation checks, enforce geojson output ring orientation.
+
+	Bug fixes:
+	* Remove null-padding at end of some record character fields.
+	* Fix dbf writing error when the number of record list or dict entries didn't match the number of fields.
+	* Handle rare garbage collection issue after deepcopy (https://github.com/mattijn/topojson/issues/120)
+	* Fix bug where records and shapes would be assigned incorrect record number (@karanrn)
+	* Fix typos in docs (@timgates)
+
 VERSION 2.1.3
 
 2021-01-14

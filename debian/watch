@@ -1,6 +1,7 @@
 version=4
 opts=\
 dversionmangle=s/\+(debian|dfsg|ds|deb)\d*$//,\
-uversionmangle=s/(\d)[_\.\-\+]?((RC|rc|pre|dev|beta|alpha)\d*)$/$1~$2/,\
-repacksuffix=+ds \
-https://pypi.debian.net/pyshp/pyshp-(.+)\.(?:zip|tgz|tbz|txz|(?:tar\.(?:gz|bz2|xz)))
+uversionmangle=s/(\d)[_\.\-\+]?((RC|rc|pre|dev|beta|alpha)\d*)$/$1~$2/;s/RC/rc/,\
+filenamemangle=s/(?:.*\/)?(?:rel|v|pyshp)?[\-\_]?(\d\S+)\.(tgz|tbz|txz|(?:tar\.(?:gz|bz2|xz)))/pyshp-$1.$2/ \
+https://github.com/GeospatialPython/pyshp/tags \
+(?:.*?/archive/(?:.*?/)?)?(?:rel|v|pyshp)?[\-\_]?(\d\S+)\.(?:tgz|tbz|txz|(?:tar\.(?:gz|bz2|xz)))
