@@ -4,32 +4,57 @@ The Python Shapefile Library (PyShp) reads and writes ESRI Shapefiles in pure Py
 
 ![pyshp logo](http://4.bp.blogspot.com/_SBi37QEsCvg/TPQuOhlHQxI/AAAAAAAAAE0/QjFlWfMx0tQ/S350/GSP_Logo.png "PyShp")
 
-[![Build Status](https://travis-ci.org/GeospatialPython/pyshp.svg?branch=master)](https://travis-ci.org/GeospatialPython/pyshp)
+![build status](https://github.com/GeospatialPython/pyshp/actions/workflows/build.yml/badge.svg)
+
+- **Author**: [Joel Lawhead](https://github.com/GeospatialPython)
+- **Maintainers**: [Karim Bahgat](https://github.com/karimbahgat)
+- **Version**: 2.3.0
+- **Date**: 30 April, 2022
+- **License**: [MIT](https://github.com/GeospatialPython/pyshp/blob/master/LICENSE.TXT)
 
 ## Contents
 
-[Overview](#overview)
-
-[Version Changes](#version-changes)
-
-[Examples](#examples)
-- [Reading Shapefiles](#reading-shapefiles)
-  - [The Reader Class](#the-reader-class)
-  - [Reading Geometry](#reading-geometry)
-  - [Reading Records](#reading-records)
-  - [Reading Geometry and Records Simultaneously](#reading-geometry-and-records-simultaneously)
-- [Writing Shapefiles](#writing-shapefiles)
-  - [The Writer Class](#the-writer-class)
-  - [Adding Records](#adding-records)
-  - [Adding Geometry](#adding-geometry)
-  - [Geometry and Record Balancing](#geometry-and-record-balancing)
-  
-[How To's](#how-tos)
-- [3D and Other Geometry Types](#3d-and-other-geometry-types)
-- [Working with Large Shapefiles](#working-with-large-shapefiles)
-- [Unicode and Shapefile Encodings](#unicode-and-shapefile-encodings)
-
-[Testing](#testing)
+- [Overview](#overview)
+- [Version Changes](#version-changes)
+- [The Basics](#the-basics)
+	- [Reading Shapefiles](#reading-shapefiles)
+		- [The Reader Class](#the-reader-class)
+			- [Reading Shapefiles from Local Files](#reading-shapefiles-from-local-files)
+			- [Reading Shapefiles from Zip Files](#reading-shapefiles-from-zip-files)
+			- [Reading Shapefiles from URLs](#reading-shapefiles-from-urls)
+			- [Reading Shapefiles from File-Like Objects](#reading-shapefiles-from-file-like-objects)
+			- [Reading Shapefiles Using the Context Manager](#reading-shapefiles-using-the-context-manager)
+			- [Reading Shapefile Meta-Data](#reading-shapefile-meta-data)
+		- [Reading Geometry](#reading-geometry)
+		- [Reading Records](#reading-records)
+		- [Reading Geometry and Records Simultaneously](#reading-geometry-and-records-simultaneously)
+	- [Writing Shapefiles](#writing-shapefiles)
+		- [The Writer Class](#the-writer-class)
+			- [Writing Shapefiles to Local Files](#writing-shapefiles-to-local-files)
+			- [Writing Shapefiles to File-Like Objects](#writing-shapefiles-to-file-like-objects)
+			- [Writing Shapefiles Using the Context Manager](#writing-shapefiles-using-the-context-manager)
+			- [Setting the Shape Type](#setting-the-shape-type)
+		- [Adding Records](#adding-records)
+		- [Adding Geometry](#adding-geometry)
+		- [Geometry and Record Balancing](#geometry-and-record-balancing)
+- [Advanced Use](#advanced-use)
+    - [Common Errors and Fixes](#common-errors-and-fixes)
+        - [Warnings and Logging](#warnings-and-logging)
+        - [Shapefile Encoding Errors](#shapefile-encoding-errors)
+	- [Reading Large Shapefiles](#reading-large-shapefiles)
+		- [Iterating through a shapefile](#iterating-through-a-shapefile)
+		- [Limiting which fields to read](#limiting-which-fields-to-read)
+		- [Attribute filtering](#attribute-filtering)
+		- [Spatial filtering](#spatial-filtering)
+	- [Writing large shapefiles](#writing-large-shapefiles)
+		- [Merging multiple shapefiles](#merging-multiple-shapefiles)
+		- [Editing shapefiles](#editing-shapefiles)
+	- [3D and Other Geometry Types](#3d-and-other-geometry-types)
+    	- [Shapefiles with measurement (M) values](#shapefiles-with-measurement-m-values)
+		- [Shapefiles with elevation (Z) values](#shapefiles-with-elevation-z-values)
+		- [3D MultiPatch Shapefiles](#3d-multipatch-shapefiles)
+- [Testing](#testing)
+- [Contributors](#contributors)
 
 
 # Overview
@@ -69,6 +94,57 @@ part of your geospatial project.
 
 
 # Version Changes
+
+## 2.3.1
+
+### Bug fixes:
+
+- Fix recently introduced issue where Reader/Writer closes file-like objects provided by user (#244)
+
+## 2.3.0
+
+### New Features:
+
+- Added support for pathlib and path-like shapefile filepaths (@mwtoews). 
+- Allow reading individual file extensions via filepaths.
+
+### Improvements:
+
+- Simplified setup and deployment (@mwtoews)
+- Faster shape access when missing shx file
+- Switch to named logger (see #240)
+
+### Bug fixes:
+
+- More robust handling of corrupt shapefiles (fixes #235)
+- Fix errors when writing to individual file-handles (fixes #237)
+- Revert previous decision to enforce geojson output ring orientation (detailed explanation at https://github.com/SciTools/cartopy/issues/2012)
+- Fix test issues in environments without network access (@sebastic, @musicinmybrain). 
+
+## 2.2.0
+
+### New Features:
+
+- Read shapefiles directly from zipfiles.
+- Read shapefiles directly from urls.
+- Allow fast extraction of only a subset of dbf fields through a `fields` arg.
+- Allow fast filtering which shapes to read from the file through a `bbox` arg.
+
+### Improvements:
+
+- More examples and restructuring of README. 
+- More informative Shape to geojson warnings (see #219).
+- Add shapefile.VERBOSE flag to control warnings verbosity (default True).
+- Shape object information when calling repr().
+- Faster ring orientation checks, enforce geojson output ring orientation.
+
+### Bug fixes:
+
+- Remove null-padding at end of some record character fields.
+- Fix dbf writing error when the number of record list or dict entries didn't match the number of fields.
+- Handle rare garbage collection issue after deepcopy (https://github.com/mattijn/topojson/issues/120)
+- Fix bug where records and shapes would be assigned incorrect record number (@karanrn)
+- Fix typos in docs (@timgates)
 
 ## 2.1.3
 
@@ -144,7 +220,7 @@ Users of the previous version 1.x should therefore take note of the following ch
 - Reading shapefiles is now more convenient:
   - Shapefiles can be opened using the context manager, and files are properly closed. 
   - Shapefiles can be iterated, have a length, and supports the geo interface. 
-  - New ways of inspecing shapefile metadata by printing. [@megies]
+  - New ways of inspecting shapefile metadata by printing. [@megies]
   - More convenient accessing of Record values as attributes. [@philippkraft]
   - More convenient shape type name checking. [@megies] 
 - Add more support and documentation for MultiPatch 3D shapes. 
@@ -163,7 +239,7 @@ Users of the previous version 1.x should therefore take note of the following ch
 - Enforce maximum field limit. [@mwtoews]
 
 
-# Examples
+# The Basics
 
 Before doing anything you must import the library.
 
@@ -177,6 +253,8 @@ repository of the PyShp GitHub site.
 ## Reading Shapefiles
 
 ### The Reader Class
+
+#### Reading Shapefiles from Local Files
 
 To read a shapefile create a new "Reader" object and pass it the name of an
 existing shapefile. The shapefile format is actually a collection of three
@@ -197,25 +275,42 @@ OR
 	>>> sf = shapefile.Reader("shapefiles/blockgroups.dbf")
 
 OR any of the other 5+ formats which are potentially part of a shapefile. The
-library does not care about file extensions.
+library does not care about file extensions. You can also specify that you only 
+want to read some of the file extensions through the use of keyword arguments:
 
-#### Reading Shapefiles Using the Context Manager
 
-The "Reader" class can be used as a context manager, to ensure open file
-objects are properly closed when done reading the data:
+	>>> sf = shapefile.Reader(dbf="shapefiles/blockgroups.dbf")
 
-    >>> with shapefile.Reader("shapefiles/blockgroups.shp") as shp:
-    ...     print(shp)
-    shapefile Reader
-        663 shapes (type 'POLYGON')
-        663 records (44 fields)
+#### Reading Shapefiles from Zip Files
+
+If your shapefile is wrapped inside a zip file, the library is able to handle that too, meaning you don't have to worry about unzipping the contents: 
+
+
+	>>> sf = shapefile.Reader("shapefiles/blockgroups.zip")
+
+If the zip file contains multiple shapefiles, just specify which shapefile to read by additionally specifying the relative path after the ".zip" part:
+
+
+	>>> sf = shapefile.Reader("shapefiles/blockgroups_multishapefile.zip/blockgroups2.shp")
+
+#### Reading Shapefiles from URLs
+
+Finally, you can use all of the above methods to read shapefiles directly from the internet, by giving a url instead of a local path, e.g.: 
+
+
+	>>> # from a zipped shapefile on website
+	>>> sf = shapefile.Reader("https://biogeo.ucdavis.edu/data/diva/rrd/NIC_rrd.zip")
+
+	>>> # from a shapefile collection of files in a github repository
+	>>> sf = shapefile.Reader("https://github.com/nvkelso/natural-earth-vector/blob/master/110m_cultural/ne_110m_admin_0_tiny_countries.shp?raw=true")
+
+This will automatically download the file(s) to a temporary location before reading, saving you a lot of time and repetitive boilerplate code when you just want quick access to some external data.
 
 #### Reading Shapefiles from File-Like Objects
 
 You can also load shapefiles from any Python file-like object using keyword
 arguments to specify any of the three files. This feature is very powerful and
-allows you to load shapefiles from a url, a zip file, a serialized object,
-or in some cases a database.
+allows you to custom load shapefiles from arbitrary storage formats, such as a protected url or zip file, a serialized object, or in some cases a database.
 
 
 	>>> myshp = open("shapefiles/blockgroups.shp", "rb")
@@ -228,6 +323,17 @@ file. This file is optional for reading. If it's available PyShp will use the
 shx file to access shape records a little faster but will do just fine without
 it.
 
+#### Reading Shapefiles Using the Context Manager
+
+The "Reader" class can be used as a context manager, to ensure open file
+objects are properly closed when done reading the data:
+
+    >>> with shapefile.Reader("shapefiles/blockgroups.shp") as shp:
+    ...     print(shp)
+    shapefile Reader
+        663 shapes (type 'POLYGON')
+        663 records (44 fields)
+
 #### Reading Shapefile Meta-Data
 
 Shapefiles have a number of attributes for inspecting the file contents.
@@ -235,6 +341,7 @@ A shapefile is a container for a specific type of geometry, and this can be chec
 shapeType attribute. 
 
 
+	>>> sf = shapefile.Reader("shapefiles/blockgroups.dbf")
 	>>> sf.shapeType
 	5
 
@@ -315,6 +422,8 @@ index which is 7.
 
 
 	>>> s = sf.shape(7)
+	>>> s
+	Shape #7: POLYGON
 
 	>>> # Read the bbox of the 8th shape to verify
 	>>> # Round coordinates to 3 decimal places
@@ -329,25 +438,32 @@ shapeType Point do not have a bounding box 'bbox'.
 	...     if not name.startswith('_'):
 	...         name
 	'bbox'
+	'oid'
 	'parts'
 	'points'
 	'shapeType'
 	'shapeTypeName'
 
-  * shapeType: an integer representing the type of shape as defined by the
+  * `oid`: The shape's index position in the original shapefile.
+
+
+		>>> shapes[3].oid
+		3
+
+  * `shapeType`: an integer representing the type of shape as defined by the
 	  shapefile specification.
 
 
 		>>> shapes[3].shapeType
 		5
 
-  * shapeTypeName: a string representation of the type of shape as defined by shapeType. Read-only. 
+  * `shapeTypeName`: a string representation of the type of shape as defined by shapeType. Read-only. 
 
 
 		>>> shapes[3].shapeTypeName
 		'POLYGON'
 		
-  * bbox: If the shape type contains multiple points this tuple describes the
+  * `bbox`: If the shape type contains multiple points this tuple describes the
 	  lower left (x,y) coordinate and upper right corner coordinate creating a
 	  complete box around the points. If the shapeType is a
 	  Null (shapeType == 0) then an AttributeError is raised.
@@ -359,7 +475,7 @@ shapeType Point do not have a bounding box 'bbox'.
 		>>> ['%.3f' % coord for coord in bbox]
 		['-122.486', '37.787', '-122.446', '37.811']
 
-  * parts: Parts simply group collections of points into shapes. If the shape
+  * `parts`: Parts simply group collections of points into shapes. If the shape
 	  record has multiple parts this attribute contains the index of the first
 	  point of each part. If there is only one part then a list containing 0 is
 	  returned.
@@ -368,7 +484,7 @@ shapeType Point do not have a bounding box 'bbox'.
 		>>> shapes[3].parts
 		[0]
 
-  * points: The points attribute contains a list of tuples containing an
+  * `points`: The points attribute contains a list of tuples containing an
 	  (x,y) coordinate for each point in the shape.
 
 
@@ -390,11 +506,19 @@ where lines and polygons are grouped for you:
 	>>> geoj["type"]
 	'MultiPolygon'
 	
-The results from the shapes() method similiarly supports converting to GeoJSON:
+The results from the shapes() method similarly supports converting to GeoJSON:
 
 
 	>>> shapes.__geo_interface__['type']
 	'GeometryCollection'
+
+Note: In some cases, if the conversion from shapefile geometry to GeoJSON encountered any problems
+or potential issues, a warning message will be displayed with information about the affected
+geometry. To ignore or suppress these warnings, you can disable this behavior by setting the 
+module constant VERBOSE to False: 
+
+
+	>>> shapefile.VERBOSE = False
 	
 
 ### Reading Records
@@ -447,6 +571,16 @@ attribute:
 	... ["UNITS3_9", "N", 8, 0], ["UNITS10_49", "N", 8, 0],
 	... ["UNITS50_UP", "N", 8, 0], ["MOBILEHOME", "N", 7, 0]]
 
+The first field of a dbf file is always a 1-byte field called "DeletionFlag", 
+which indicates records that have been deleted but not removed. However, 
+since this flag is very rarely used, PyShp currently will return all records  
+regardless of their deletion flag, and the flag is also not included in the list of 
+record values. In other words, the DeletionFlag field has no real purpose, and 
+should in most cases be ignored. For instance, to get a list of all fieldnames:
+
+
+	>>> fieldnames = [f[0] for f in sf.fields[1:]]
+
 You can get a list of the shapefile's records by calling the records() method:
 
 
@@ -461,7 +595,7 @@ To read a single record call the record() method with the record's index:
 	>>> rec = sf.record(3)
 	
 Each record is a list-like Record object containing the values corresponding to each field in
-the field list. A record's values can be accessed by positional indexing or slicing.
+the field list (except the DeletionFlag). A record's values can be accessed by positional indexing or slicing.
 For example in the blockgroups shapefile the 2nd and 3rd fields are the blockgroup id 
 and the 1990 population count of that San Francisco blockgroup:
 
@@ -527,18 +661,14 @@ To get the 4th shape record from the blockgroups shapefile use the third index:
 
 
 	>>> shapeRec = sf.shapeRecord(3)
+	>>> shapeRec.record[1:3]
+	['060750601001', 4715]
 	
-Each individual shape record also supports the _\_geo_interface\_\_ to convert it to a GeoJSON:
+Each individual shape record also supports the _\_geo_interface\_\_ to convert it to a GeoJSON feature:
 
 
 	>>> shapeRec.__geo_interface__['type']
 	'Feature'
-
-The blockgroup key and population count:
-
-
-	>>> shapeRec.record[1:3]
-	['060750601001', 4715]
 	
 
 ## Writing Shapefiles
@@ -559,6 +689,8 @@ interest. Many precision agriculture chemical field sprayers also use the shp
 format as a control file for the sprayer system (usually in combination with
 custom database file formats).
 
+#### Writing Shapefiles to Local Files
+
 To create a shapefile you begin by initiating a new Writer instance, passing it
 the file path and name to save to:
 
@@ -578,23 +710,6 @@ one or more file types:
 In that case, any file types not assigned will not
 save and only file types with file names will be saved. 
 
-#### Writing Shapefiles Using the Context Manager
-
-The "Writer" class automatically closes the open files and writes the final headers once it is garbage collected.
-In case of a crash and to make the code more readable, it is nevertheless recommended 
-you do this manually by calling the "close()" method: 
-
-
-	>>> w.close()
-
-Alternatively, you can also use the "Writer" class as a context manager, to ensure open file
-objects are properly closed and final headers written once you exit the with-clause:
-
-
-	>>> with shapefile.Writer("shapefiles/test/contextwriter") as w:
-	... 	w.field('field1', 'C')
-	... 	pass
-
 #### Writing Shapefiles to File-Like Objects
 
 Just as you can read shapefiles from python file-like objects you can also
@@ -613,7 +728,35 @@ write to them:
 	>>> w.record()
 	>>> w.null()
 	>>> w.close()
+
 	>>> # To read back the files you could call the "StringIO.getvalue()" method later.
+	>>> assert shp.getvalue()
+	>>> assert shx.getvalue()
+	>>> assert dbf.getvalue()
+
+	>>> # In fact, you can read directly from them using the Reader
+	>>> r = shapefile.Reader(shp=shp, shx=shx, dbf=dbf)
+	>>> len(r)
+	1
+	
+	
+
+#### Writing Shapefiles Using the Context Manager
+
+The "Writer" class automatically closes the open files and writes the final headers once it is garbage collected.
+In case of a crash and to make the code more readable, it is nevertheless recommended 
+you do this manually by calling the "close()" method: 
+
+
+	>>> w.close()
+
+Alternatively, you can also use the "Writer" class as a context manager, to ensure open file
+objects are properly closed and final headers written once you exit the with-clause:
+
+
+	>>> with shapefile.Writer("shapefiles/test/contextwriter") as w:
+	... 	w.field('field1', 'C')
+	... 	pass
 	
 #### Setting the Shape Type
 
@@ -936,14 +1079,240 @@ most shapefile software.
 	
 
 
-# How To's
+# Advanced Use
+
+## Common Errors and Fixes
+
+Below we list some commonly encountered errors and ways to fix them. 
+
+### Warnings and Logging
+
+By default, PyShp chooses to be transparent and provide the user with logging information and warnings about non-critical issues when reading or writing shapefiles. This behavior is controlled by the module constant `VERBOSE` (which defaults to True). If you would rather suppress this information, you can simply set this to False: 
+
+
+	>>> shapefile.VERBOSE = False
+
+All logging happens under the namespace `shapefile`. So another way to suppress all PyShp warnings would be to alter the logging behavior for that namespace:
+
+
+	>>> import logging
+	>>> logging.getLogger('shapefile').setLevel(logging.ERROR)
+
+### Shapefile Encoding Errors
+
+PyShp supports reading and writing shapefiles in any language or character encoding, and provides several options for decoding and encoding text. 
+Most shapefiles are written in UTF-8 encoding, PyShp's default encoding, so in most cases you don't have to specify the encoding. 
+If you encounter an encoding error when reading a shapefile, this means the shapefile was likely written in a non-utf8 encoding. 
+For instance, when working with English language shapefiles, a common reason for encoding errors is that the shapefile was written in Latin-1 encoding.
+For reading shapefiles in any non-utf8 encoding, such as Latin-1, just 
+supply the encoding option when creating the Reader class. 
+
+
+	>>> r = shapefile.Reader("shapefiles/test/latin1.shp", encoding="latin1")
+	>>> r.record(0) == [2, u'Ñandú']
+	True
+	
+Once you have loaded the shapefile, you may choose to save it using another more supportive encoding such 
+as UTF-8. Assuming the new encoding supports the characters you are trying to write, reading it back in 
+should give you the same unicode string you started with. 
+
+
+	>>> w = shapefile.Writer("shapefiles/test/latin_as_utf8.shp", encoding="utf8")
+	>>> w.fields = r.fields[1:]
+	>>> w.record(*r.record(0))
+	>>> w.null()
+	>>> w.close()
+	
+	>>> r = shapefile.Reader("shapefiles/test/latin_as_utf8.shp", encoding="utf8")
+	>>> r.record(0) == [2, u'Ñandú']
+	True
+	
+If you supply the wrong encoding and the string is unable to be decoded, PyShp will by default raise an
+exception. If however, on rare occasion, you are unable to find the correct encoding and want to ignore
+or replace encoding errors, you can specify the "encodingErrors" to be used by the decode method. This
+applies to both reading and writing. 
+
+
+	>>> r = shapefile.Reader("shapefiles/test/latin1.shp", encoding="ascii", encodingErrors="replace")
+	>>> r.record(0) == [2, u'�and�']
+	True
+
+
+
+## Reading Large Shapefiles
+
+Despite being a lightweight library, PyShp is designed to be able to read shapefiles of any size, allowing you to work with hundreds of thousands or even millions 
+of records and complex geometries. 
+
+### Iterating through a shapefile
+
+As an example, let's load this Natural Earth shapefile of more than 4000 global administrative boundary polygons:
+
+
+	>>> sf = shapefile.Reader("https://github.com/nvkelso/natural-earth-vector/blob/master/10m_cultural/ne_10m_admin_1_states_provinces?raw=true")
+
+When first creating the Reader class, the library only reads the header information
+and leaves the rest of the file contents alone. Once you call the records() and shapes() 
+methods however, it will attempt to read the entire file into memory at once. 
+For very large files this can result in MemoryError. So when working with large files
+it is recommended to use instead the iterShapes(), iterRecords(), or iterShapeRecords()
+methods instead. These iterate through the file contents one at a time, enabling you to loop 
+through them while keeping memory usage at a minimum. 
+
+
+	>>> for shape in sf.iterShapes():
+	...     # do something here
+	...     pass
+	
+	>>> for rec in sf.iterRecords():
+	...     # do something here
+	...     pass
+	
+	>>> for shapeRec in sf.iterShapeRecords():
+	...     # do something here
+	...     pass
+
+	>>> for shapeRec in sf: # same as iterShapeRecords()
+	...     # do something here
+	...     pass
+
+### Limiting which fields to read
+
+By default when reading the attribute records of a shapefile, pyshp unpacks and returns the data for all of the dbf fields, regardless of whether you actually need that data or not. To limit which field data is unpacked when reading each record and speed up processing time, you can specify the `fields` argument to any of the methods involving record data. Note that the order of the specified fields does not matter, the resulting records will list the specified field values in the order that they appear in the original dbf file. For instance, if we are only interested in the country and name of each admin unit, the following is a more efficient way of iterating through the file:
+
+
+	>>> fields = ["geonunit", "name"]
+	>>> for rec in sf.iterRecords(fields=fields):
+	... 	# do something
+	... 	pass
+	>>> rec
+	Record #4595: ['Birgu', 'Malta']
+	
+### Attribute filtering
+
+In many cases, we aren't interested in all entries of a shapefile, but rather only want to retrieve a small subset of records by filtering on some attribute. To avoid wasting time reading records and shapes that we don't need, we can start by iterating only the records and fields of interest, check if the record matches some condition as a way to filter the data, and finally load the full record and shape geometry for those that meet the condition:
+
+
+	>>> filter_field = "geonunit"
+	>>> filter_value = "Eritrea"
+	>>> for rec in sf.iterRecords(fields=[filter_field]):
+	...     if rec[filter_field] == filter_value:
+	... 		# load full record and shape
+	... 		shapeRec = sf.shapeRecord(rec.oid)
+	... 		shapeRec.record["name"]
+	'Debubawi Keyih Bahri'
+	'Debub'
+	'Semenawi Keyih Bahri'
+	'Gash Barka'
+	'Maekel'
+	'Anseba'
+
+Selectively reading only the necessary data in this way is particularly useful for efficiently processing a limited subset of data from very large files or when looping through a large number of files, especially if they contain large attribute tables or complex shape geometries. 
+
+### Spatial filtering
+
+Another common use-case is that we only want to read those records that are located in some region of interest. Because the shapefile stores the bounding box of each shape separately from the geometry data, it's possible to quickly retrieve all shapes that might overlap a given bounding box region without having to load the full shape geometry data for every shape. This can be done by specifying the `bbox` argument to any of the record or shape methods:
+
+
+	>>> bbox = [36.423, 12.360, 43.123, 18.004] # ca bbox of Eritrea
+	>>> fields = ["geonunit","name"]
+	>>> for shapeRec in sf.iterShapeRecords(bbox=bbox, fields=fields):
+	... 	shapeRec.record
+	Record #368: ['Afar', 'Ethiopia']
+	Record #369: ['Tadjourah', 'Djibouti']
+	Record #375: ['Obock', 'Djibouti']
+	Record #376: ['Debubawi Keyih Bahri', 'Eritrea']
+	Record #1106: ['Amhara', 'Ethiopia']
+	Record #1107: ['Gedarif', 'Sudan']
+	Record #1108: ['Tigray', 'Ethiopia']
+	Record #1414: ['Sa`dah', 'Yemen']
+	Record #1415: ['`Asir', 'Saudi Arabia']
+	Record #1416: ['Hajjah', 'Yemen']
+	Record #1417: ['Jizan', 'Saudi Arabia']
+	Record #1598: ['Debub', 'Eritrea']
+	Record #1599: ['Red Sea', 'Sudan']
+	Record #1600: ['Semenawi Keyih Bahri', 'Eritrea']
+	Record #1601: ['Gash Barka', 'Eritrea']
+	Record #1602: ['Kassala', 'Sudan']
+	Record #1603: ['Maekel', 'Eritrea']
+	Record #2037: ['Al Hudaydah', 'Yemen']
+	Record #3741: ['Anseba', 'Eritrea']
+
+This functionality means that shapefiles can be used as a bare-bones spatially indexed database, with very fast bounding box queries for even the largest of shapefiles. Note that, as with all spatial indexing, this method does not guarantee that the *geometries* of the resulting matches overlap the queried region, only that their *bounding boxes* overlap. 
+
+
+
+## Writing large shapefiles
+
+Similar to the Reader class, the shapefile Writer class uses a streaming approach to keep memory 
+usage at a minimum and allow writing shapefiles of arbitrarily large sizes. The library takes care of this under-the-hood by immediately 
+writing each geometry and record to disk the moment they 
+are added using shape() or record(). Once the writer is closed, exited, or garbage 
+collected, the final header information is calculated and written to the beginning of 
+the file. 
+
+### Merging multiple shapefiles
+
+This means that it's possible to merge hundreds or thousands of shapefiles, as 
+long as you iterate through the source files to avoid loading everything into 
+memory. The following example copies the contents of a shapefile to a new file 10 times:
+
+	>>> # create writer
+	>>> w = shapefile.Writer('shapefiles/test/merge')
+
+	>>> # copy over fields from the reader
+	>>> r = shapefile.Reader("shapefiles/blockgroups")
+	>>> for field in r.fields[1:]:
+	...     w.field(*field)
+
+	>>> # copy the shapefile to writer 10 times
+	>>> repeat = 10
+	>>> for i in range(repeat):
+	...     r = shapefile.Reader("shapefiles/blockgroups")
+	...     for shapeRec in r.iterShapeRecords():
+	...         w.record(*shapeRec.record)
+	...         w.shape(shapeRec.shape)
+
+	>>> # check that the written file is 10 times longer
+	>>> len(w) == len(r) * 10
+	True
+
+	>>> # close the writer
+	>>> w.close()
+
+In this trivial example, we knew that all files had the exact same field names, ordering, and types. In other scenarios, you will have to additionally make sure that all shapefiles have the exact same fields in the same order, and that they all contain the same geometry type. 
+
+### Editing shapefiles
+
+If you need to edit a shapefile you would have to read the 
+file one record at a time, modify or filter the contents, and write it back out. For instance, to create a copy of a shapefile that only keeps a subset of relevant fields: 
+
+	>>> # create writer
+	>>> w = shapefile.Writer('shapefiles/test/edit')
+
+	>>> # define which fields to keep
+	>>> keep_fields = ['BKG_KEY', 'MEDIANRENT']
+
+	>>> # copy over the relevant fields from the reader
+	>>> r = shapefile.Reader("shapefiles/blockgroups")
+	>>> for field in r.fields[1:]:
+	...     if field[0] in keep_fields:
+	...         w.field(*field)
+
+	>>> # write only the relevant attribute values
+	>>> for shapeRec in r.iterShapeRecords(fields=keep_fields):
+	...     w.record(*shapeRec.record)
+	...     w.shape(shapeRec.shape)
+
+	>>> # close writer
+	>>> w.close()
 
 ## 3D and Other Geometry Types
 
 Most shapefiles store conventional 2D points, lines, or polygons. But the shapefile format is also capable
 of storing various other types of geometries as well, including complex 3D surfaces and objects. 
 
-**Shapefiles with measurement (M) values**
+### Shapefiles with measurement (M) values
 
 Measured shape types are shapes that include a measurement value at each vertex, for instance
 speed measurements from a GPS device. Shapes with measurement (M) values are added with the following
@@ -975,7 +1344,7 @@ Shapefiles containing M-values can be examined in several ways:
 	[0.0, None, 3.0, None, 0.0, None, None]
 
 	
-**Shapefiles with elevation (Z) values**
+### Shapefiles with elevation (Z) values
 
 Elevation shape types are shapes that include an elevation value at each vertex, for instance elevation from a GPS device. 
 Shapes with elevation (Z) values are added with the following methods: "pointz", "multipointz", "linez", and "polyz". 
@@ -1007,7 +1376,7 @@ To examine a Z-type shapefile you can do:
 	>>> r.shape(0).z # flat list of Z-values
 	[18.0, 20.0, 22.0, 0.0, 0.0, 0.0, 0.0, 15.0, 13.0, 14.0]
 
-**3D MultiPatch Shapefiles**
+### 3D MultiPatch Shapefiles
 
 Multipatch shapes are useful for storing composite 3-Dimensional objects. 
 A MultiPatch shape represents a 3D object made up of one or more surface parts.
@@ -1035,105 +1404,36 @@ its roof:
 For an introduction to the various multipatch part types and examples of how to create 3D MultiPatch objects see [this
 ESRI White Paper](http://downloads.esri.com/support/whitepapers/ao_/J9749_MultiPatch_Geometry_Type.pdf). 
 
-## Working with Large Shapefiles
-
-Despite being a lightweight library, PyShp is designed to be able to read and write 
-shapefiles of any size, allowing you to work with hundreds of thousands or even millions 
-of records and complex geometries. 
-
-When first creating the Reader class, the library only reads the header information
-and leaves the rest of the file contents alone. Once you call the records() and shapes() 
-methods however, it will attempt to read the entire file into memory at once. 
-For very large files this can result in MemoryError. So when working with large files
-it is recommended to use instead the iterShapes(), iterRecords(), or iterShapeRecords()
-methods instead. These iterate through the file contents one at a time, enabling you to loop 
-through them while keeping memory usage at a minimum. 
-
-
-	>>> for shape in sf.iterShapes():
-	...     # do something here
-	...     pass
-	
-	>>> for rec in sf.iterRecords():
-	...     # do something here
-	...     pass
-	
-	>>> for shapeRec in sf.iterShapeRecords():
-	...     # do something here
-	...     pass
-
-	>>> for shapeRec in sf: # same as iterShapeRecords()
-	...     # do something here
-	...     pass
-	
-The shapefile Writer class uses a similar streaming approach to keep memory 
-usage at a minimum. The library takes care of this under-the-hood by immediately 
-writing each geometry and record to disk the moment they 
-are added using shape() or record(). Once the writer is closed, exited, or garbage 
-collected, the final header information is calculated and written to the beginning of 
-the file. 
-
-This means that as long as you are able to iterate through a source file without having
-to load everything into memory, such as a large CSV table or a large shapefile, you can 
-process and write any number of items, and even merge many different source files into a single 
-large shapefile. If you need to edit or undo any of your writing you would have to read the 
-file back in, one record at a time, make your changes, and write it back out. 
-
-## Unicode and Shapefile Encodings
-
-PyShp has full support for unicode and shapefile encodings, so you can always expect to be working
-with unicode strings in shapefiles that have text fields. 
-Most shapefiles are written in UTF-8 encoding, PyShp's default encoding, so in most cases you don't 
-have to specify the encoding. For reading shapefiles in any other encoding, such as Latin-1, just 
-supply the encoding option when creating the Reader class. 
-
-
-	>>> r = shapefile.Reader("shapefiles/test/latin1.shp", encoding="latin1")
-	>>> r.record(0) == [2, u'Ñandú']
-	True
-	
-Once you have loaded the shapefile, you may choose to save it using another more supportive encoding such 
-as UTF-8. Provided the new encoding supports the characters you are trying to write, reading it back in 
-should give you the same unicode string you started with. 
-
-
-	>>> w = shapefile.Writer("shapefiles/test/latin_as_utf8.shp", encoding="utf8")
-	>>> w.fields = r.fields[1:]
-	>>> w.record(*r.record(0))
-	>>> w.null()
-	>>> w.close()
-	
-	>>> r = shapefile.Reader("shapefiles/test/latin_as_utf8.shp", encoding="utf8")
-	>>> r.record(0) == [2, u'Ñandú']
-	True
-	
-If you supply the wrong encoding and the string is unable to be decoded, PyShp will by default raise an
-exception. If however, on rare occasion, you are unable to find the correct encoding and want to ignore
-or replace encoding errors, you can specify the "encodingErrors" to be used by the decode method. This
-applies to both reading and writing. 
-
-
-	>>> r = shapefile.Reader("shapefiles/test/latin1.shp", encoding="ascii", encodingErrors="replace")
-	>>> r.record(0) == [2, u'�and�']
-	True
 
 	
 # Testing
 
-The testing framework is doctest, which are located in this file README.md.
+The testing framework is pytest, and the tests are located in test_shapefile.py. 
+This includes an extensive set of unit tests of the various pyshp features, 
+and tests against various input data. Some of the tests that require 
+internet connectivity will be skipped in offline testing environments. 
+In the same folder as README.md and shapefile.py, from the command line run 
+```
+$ python -m pytest
+``` 
+
+Additionally, all the code and examples located in this file, README.md, 
+is tested and verified with the builtin doctest framework.
+A special routine for invoking the doctest is run when calling directly on shapefile.py.
 In the same folder as README.md and shapefile.py, from the command line run 
 ```
 $ python shapefile.py
 ``` 
 
 Linux/Mac and similar platforms will need to run `$ dos2unix README.md` in order
-correct line endings in README.md.
+to correct line endings in README.md.
 
 # Contributors
 
 ```
 Atle Frenvik Sveen
 Bas Couwenberg
+Ben Beasley
 Casey Meisenzahl
 Charles Arnold
 David A. Riggs
@@ -1147,6 +1447,7 @@ Ignacio Martinez Vazquez
 Jason Moujaes
 Jonty Wareing
 Karim Bahgat
+karanrn
 Kyle Kelley
 Louis Tiao
 Marcin Cuprjak
@@ -1155,6 +1456,7 @@ Micah Cochran
 Michael Davis
 Michal Čihař
 Mike Toews
+Miroslav Šedivý
 Nilo
 pakoun
 Paulo Ernesto
@@ -1163,6 +1465,7 @@ Razzi Abuissa
 RosBer97
 Ross Rogers
 Ryan Brideau
+Tim Gates
 Tobias Megies
 Tommi Penttinen
 Uli Köhler

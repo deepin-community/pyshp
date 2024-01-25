@@ -1,10 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: PyShp
 Upstream-Contact: Joel Lawhead <jlawhead@geospatialpython.com>
-Source: https://pypi.debian.net/pyshp/
-Comment: The upstream sources are repacked to excluded the pyshp.egg-info
- directory that is automatically removed by dh_clean.
-Files-Excluded: pyshp.egg-info/*
+Source: https://github.com/GeospatialPython/pyshp
 
 Files: *
 Copyright: Joel Lawhead <jlawhead@geospatialpython.com>
